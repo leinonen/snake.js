@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>snake.js</title></head>
+<body>
+  <h1>snake.js</h1>
+  <h2 id="score"></h2>
+  <canvas></canvas>
+  <p>Use arrow keys to move snake<br />Press escape to restart</p>
+  <script>
+    window.onload = function () {
+      const w = 20, h = 20, size = 20, defaultSpeed = 250;
+      let time = 0, canvas, ctx, direction = 'up';
+      let speed = defaultSpeed, snake = [], food = [], gameover = false;
+      let score = 0, timer, freeze = false;
+      document.body.setAttribute('style', 'background-color: #213; text-align: center; color: #fff;')
+      canvas = document.querySelector('canvas');
+      canvas.width = w * size;
+      canvas.height = h * size;
+      ctx = canvas.getContext('2d');
+      function init() {
+        gameover = false
+        speed = defaultSpeed;
+        score = 0;
+        snake = [{ x: w / 2, y: h / 2 }]
+        spawnFood()
+        if (timer) clearInterval(timer)
+        timer = setInterval(gameLoop, speed);
+      }
+      function gameLoop() {
+        advance()
+        render();
+      }
+      function spawnFood() {
+        food = []
+        let x, y;
+        while (true) {
+          x = Math.floor(Math.random() * w);
+          y = Math.floor(Math.random() * h);
+          let collision = snake.find(s => s.x === x && s.y == y);
+          if (!collision) break;
+        }
+        food.push({ x, y })
+      }
+      function render() {
+        let head = snake[0]
+        ctx.fillStyle = gameover ? "#722" : "#324";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        food.forEach((a, i) => { ctx.fillStyle = "#f44"; ctx.fillRect(a.x * size, a.y * size, size, size); });
+        snake.forEach((s, i) => { ctx.fillStyle = i === 0 ? "#879" : "#547"; ctx.fillRect(s.x * size, s.y * size, size, size); });
+        document.querySelector('#score').innerHTML = score
+      }
+      function advance() {
+        if (gameover) return;
+        let oldsnake = snake.map(s => ({ x: s.x, y: s.y }))
+        let head = snake[0], tailX = snake[snake.length - 1].x, tailY = snake[snake.length - 1].y
+        if (direction === 'left') head.x--; if (direction === 'right') head.x++;
+        if (direction === 'up')   head.y--; if (direction === 'down') head.y++;
+        if (head.x < 0) head.x = w - 1; if (head.x > w - 1) head.x = 0;
+        if (head.y < 0) head.y = h - 1; if (head.y > h - 1) head.y = 0;
+        const collision = oldsnake.find(s => s.x === head.x && s.y === head.y)
+        gameover = collision !== undefined;
+        if (food.find(f => f.x === head.x && f.y === head.y)) {
+          snake.push({ x: tailY, y: tailX })
+          score++;
+          speed -= 4;
+          clearInterval(timer)
+          timer = setInterval(gameLoop, speed);
+          spawnFood()
+        }
+        for (let i = 0; i < snake.length - 1; i++) { snake[i + 1] = oldsnake[i]; }
+        freeze = false;
+      }
+      document.addEventListener('keydown', e => {
+        const code = e.code.toLowerCase()
+        if (!gameover) {
+          if (freeze) return;
+          if (code.startsWith('arrow')) { 
+            const d = code.substr(5);
+            if ((direction === 'left' && d === 'right') ||  (direction === 'right' && d === 'left') || 
+                (direction === 'up'   && d === 'down')  ||  (direction === 'down'  && d === 'up')) return;
+            direction = d; freeze = true; 
+          }
+        }
+        if (code === 'escape') init()
+        render()
+      })
+      init()
+      render()
+    }
+  </script>
+</body>
+</html>
